@@ -1,16 +1,18 @@
 sudo: false
 cache:
   directories:
-    - node_modules
+  - node_modules
 language: node_js
 node_js:
-  - "0.10"
+- '0.12'
 before_install: npm install -g grunt-cli
 after_success: grunt travis
 deploy:
   provider: npm
-  email: eevert.saukkokoski@appgyver.com
+  email: ag-hostmaster+npm@appgyver.com
   on:
     tags: true
     all_branches: true
     repo: AppGyver/ag-magic-model
+  api_key:
+    secure: IvGB6rwY0GxbxmrI781+A2Ty1ASifHN8c1XvCMmMg4prHimIkB6BZS+vLUa1iYMyv5lm7RbnwPWEdnjFC9zt28IGurFh4TzOhX3edEbI8ANDeBorILkjN9G9gAGDP63qDFvG0d3ndo9/rbJKdEA/UZBRE88vYDgsqLOqcVqhMUdEensAn52l55Rnbewgrl15gYWsKxL0HcDV99wBgLoAMzqtpH5DsidHy4wAc9INSfHy7UynQe/AkRMJlan3o3swQ2s/BvEJGeXmfb1gptfaNbEGpXZ+m1Uj8KeG6cma0zfzsvSjwMk2EnHYcjYaPq7h1KC9F5riij7ntTJRLnGw6IlebYFEd49wX3usECNqWamrerRhrokIXj/ZKsJPG21VIbqZGUHDoE1zdq7/p0kH3zON80qdwf1S0VN+HS1FBBH3RsfUmLR8PBUm9i6gUQj7zpBlzxslgZhU3pQtlY/aNpuvM9B5QcfIvfn6qErxQW9XGmFaJflyAZl3N6AV7nMsbDEED5zSgcL50RUt5IhCLfomzU5VsN7dN4CE7s39sEscgfNnFl+yKwm2lJes8tp3jgcR+5dGoebIMlHDyZb/mR4BMkQp4NjMmTeaZu8/+FxGgg2Ytoq1qrwVbf1GiwS4TydFTPf2vGiZqNokDzONQKxHkIfZ6EPyjmfea3B04vo=
