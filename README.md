@@ -21,17 +21,19 @@ Once sprinkled on a `supersonic.data.model` class, `ag-magic-model` adds the `ma
 
 ### Magical model accessors
 
-#### `Model.magical.label`
+#### `Model.magical.label[fieldName]`
 
-`Model.magical.label[fieldName]` accesses the formatted label of a field.
+Access the formatted label of a field.
 
 ### Magical record accessors
 
 #### `record.magical.title`
 
-`record.magical.title` accesses the formatted title of a data record.
+Access the formatted title of a data record.
 
-#### `record.magical.formatted`
+#### `record.magical.formatted[fieldName]`
 
-`record.magical.formatted[fieldName]` accesses the value of a field formatted as a string. Formatting takes into account the field's type, and possible other configuration options defined in Composer. For instance, a field with they display type `date` will be formatted as `YYYY-MM-DD` by default, but this can be overridden by configuring the data field in Composer.
+Access the value of a field formatted as a string.
+
+Formatting takes into account the field's type, and possible other configuration options defined in Composer. For instance, a field with they display type `date` will be formatted as `YYYY-MM-DD` by default, but this can be overridden by configuring the data field in Composer.
 
