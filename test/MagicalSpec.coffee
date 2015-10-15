@@ -40,3 +40,8 @@ describe "ag-magic-model", ->
         it 'is an object', ->
           MagicalFoo = magical('foo')
           (new MagicalFoo).magical.should.have.property('formatted').be.an 'object'
+
+      describe 'title', ->
+        it 'is a formatted string', ->
+          MagicalFoo = magical('foo')
+          (new MagicalFoo).magical.should.have.property('title').be.a 'string'

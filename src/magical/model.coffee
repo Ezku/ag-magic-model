@@ -2,6 +2,7 @@ labels = require './labels'
 createFormatters = require './formatters'
 
 formattedFieldAccessors = require './formatted-field-accessors'
+titleAccessor = require './title'
 
 sprinkleMagicProps = (object, getProps) ->
   Object.defineProperty object, 'magical',
@@ -21,7 +22,11 @@ module.exports = magical = (ModelClass, definition, modelName) ->
     label: labels ModelClass, schemaFields
     formatter: formatters
 
-  sprinkleMagicProps MagicalModel.prototype, ->
+  # KLUDGE: Because we can't affect which class the underlying model will new
+  # models off of, directly sprinkle on top of the original prototype. This is
+  # the ugly, magical part.
+  sprinkleMagicProps ModelClass.prototype, ->
     formatted: formattedFieldAccessors formatters, this
+    title: titleAccessor definition, formatters, this
 
   MagicalModel
