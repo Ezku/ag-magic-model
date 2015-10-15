@@ -1,5 +1,7 @@
 require('chai').should()
 
-describe "ag-magic-model root", ->
-  it "should be defined", ->
-    require('../src').should.exist
+magical = require '../src'
+
+describe "ag-magic-model", ->
+  it "is a function", ->
+    magical.should.be.a 'function'
