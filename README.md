@@ -11,15 +11,23 @@ Sprinkle Supersonic Data models with magical Composer Module sauce
 ## Usage
 
 ```coffeescript
-magical = require 'ag-magic-model'
-Car = magical supersonic.data.model 'car'
+# Replace this:
+Car = supersonic.data.model 'car'
 
-# Bam, your model is now magical
+# With this:
+magical = require 'ag-magic-model'
+Car = magical 'car'
+
+# Bam, your model is now magical!
 ```
 
 Once sprinkled on a `supersonic.data.model` class, `ag-magic-model` adds the `magical` property on the class and its instances. It can be used to access features enabled when integrating with Composer.
 
 ### Magical model accessors
+
+#### `Model.magical.name`
+
+Access the plain name of the resource this model is backed by.
 
 #### `Model.magical.label[fieldName]`
 
