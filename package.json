@@ -38,5 +38,8 @@
       "data-cover-never": "node_modules",
       "loader": "./node-loaders/coffee-script"
     }
+  },
+  "dependencies": {
+    "moment": "^2.10.6"
   }
 }
