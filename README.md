@@ -29,6 +29,10 @@ Once sprinkled on a `supersonic.data.model` class, `ag-magic-model` adds the `ma
 
 Access the plain name of the resource this model is backed by.
 
+#### `Model.magical.definition`
+
+Access the complete definition object from Composer used by this model.
+
 #### `Model.magical.label[fieldName]`
 
 Access the formatted label of a field.

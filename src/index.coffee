@@ -3,16 +3,16 @@ makeMagicalModel = require './magical/model'
 createModel = window?.supersonic?.data?.model ? ->
   class EmptyModel
 
-getSchema = (modelName) ->
-  window?.supersonic?.env?.data?.bundle?.resources[modelName]?.schema ? {}
+getResourceDefinition = (modelName) ->
+  window?.supersonic?.env?.data?.bundle?.resources[modelName] ? {}
 
 module.exports = createMagicModel = (modelName, args...) ->
   Model = createModel modelName, args...
-  schema = getSchema modelName
+  resourceDefinition = getResourceDefinition modelName
 
   makeMagicalModel(
     Model
-    schema
+    resourceDefinition
     modelName
   )
 

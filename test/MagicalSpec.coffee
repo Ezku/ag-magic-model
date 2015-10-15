@@ -18,6 +18,10 @@ describe "ag-magic-model", ->
         it 'is the model name', ->
           magical('foo').magical.should.have.property('name').equal 'foo'
 
+      describe 'definition', ->
+        it 'is an object', ->
+          magical('foo').magical.should.have.property('definition').be.an 'object'
+
       describe 'label', ->
         it 'is an object', ->
           magical('foo').magical.should.have.property('label').be.an 'object'
