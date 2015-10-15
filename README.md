@@ -6,4 +6,32 @@ ag-magic-model
 [![Dependency Status](http://img.shields.io/david/AppGyver/ag-magic-model.svg)](https://david-dm.org/AppGyver/ag-magic-model)
 [![Coverage Status](https://img.shields.io/coveralls/AppGyver/ag-magic-model.svg)](https://coveralls.io/r/AppGyver/ag-magic-model)
 
-ag magic model npm library
+Sprinkle Supersonic Data models with magical Composer Module sauce
+
+## Usage
+
+```coffeescript
+magical = require 'ag-magic-model'
+Car = magical supersonic.data.model 'car'
+
+# Bam, your model is now magical
+```
+
+Once sprinkled on a `supersonic.data.model` class, `ag-magic-model` adds the `magical` property on the class and its instances. It can be used to access features enabled when integrating with Composer.
+
+### Magical model accessors
+
+#### `Model.magical.label`
+
+`Model.magical.label[fieldName]` accesses the formatted label of a field.
+
+### Magical record accessors
+
+#### `record.magical.title`
+
+`record.magical.title` accesses the formatted title of a data record.
+
+#### `record.magical.formatted`
+
+`record.magical.formatted[fieldName]` accesses the value of a field formatted as a string. Formatting takes into account the field's type, and possible other configuration options defined in Composer. For instance, a field with they display type `date` will be formatted as `YYYY-MM-DD` by default, but this can be overridden by configuring the data field in Composer.
+
