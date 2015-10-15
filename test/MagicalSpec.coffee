@@ -22,6 +22,10 @@ describe "ag-magic-model", ->
         it 'is an object', ->
           magical('foo').magical.should.have.property('label').be.an 'object'
 
+      describe 'formatter', ->
+        it 'is an object', ->
+          magical('foo').magical.should.have.property('formatter').be.an 'object'
+
   describe 'a magical instance', ->
     describe 'magical', ->
       it 'is an object', ->

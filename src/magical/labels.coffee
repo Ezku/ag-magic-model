@@ -1,7 +1,7 @@
-module.exports = (ModelClass, schema) ->
+module.exports = (ModelClass, schemaFields) ->
   labels = {}
 
-  for fieldName, fieldSchema of (schema.fields || {})
+  for fieldName, fieldSchema of schemaFields
     labels[fieldName] = switch
       when fieldSchema?.label?
         fieldSchema.label

@@ -33,6 +33,10 @@ Access the plain name of the resource this model is backed by.
 
 Access the formatted label of a field.
 
+#### `Model.magical.formatter[fieldName]`
+
+Access the formatter function for a field. Call the function with a field value to get it back as formatted.
+
 ### Magical record accessors
 
 #### `record.magical.title`
