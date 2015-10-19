@@ -21,35 +21,42 @@ Car = magical 'car'
 # Bam, your model is now magical!
 ```
 
-Once sprinkled on a `supersonic.data.model` class, `ag-magic-model` adds the `magical` property on the class and its instances. It can be used to access features enabled when integrating with Composer.
+Once sprinkled on a `supersonic.data.model` class, `ag-magic-model` adds the `magical` property on the class. It can be used to access features enabled when integrating with Composer.
 
-### Magical model accessors
+## Magical model accessors
 
-#### `Model.magical.name`
+### `Model.magical.name`
 
 Access the plain name of the resource this model is backed by.
 
-#### `Model.magical.definition`
+
+### `Model.magical.definition`
 
 Access the complete definition object from Composer used by this model.
 
-#### `Model.magical.label[fieldName]`
+
+### `Model.magical.label[fieldName]`
 
 Access the formatted label of a field.
 
-#### `Model.magical.formatter[fieldName]`
+
+### `Model.magical.titles`
+
+#### `Model.magical.titles.plural`
+
+The plural title for a collection of records of this type.
+
+#### `Model.magical.titles.singular`
+
+The singular title for records of this type.
+
+#### `Model.magical.titles.record(data)`
+
+The formatted title for a specific record of this type.
+
+
+### `Model.magical.formatter[fieldName]`
 
 Access the formatter function for a field. Call the function with a field value to get it back as formatted.
 
-### Magical record accessors
-
-#### `record.magical.title`
-
-Access the formatted title of a data record.
-
-#### `record.magical.formatted[fieldName]`
-
-Access the value of a field formatted as a string.
-
 Formatting takes into account the field's type, and possible other configuration options defined in Composer. For instance, a field with they display type `date` will be formatted as `YYYY-MM-DD` by default, but this can be overridden by configuring the data field in Composer.
-

@@ -30,18 +30,18 @@ describe "ag-magic-model", ->
         it 'is an object', ->
           magical('foo').magical.should.have.property('formatter').be.an 'object'
 
-  describe 'a magical instance', ->
-    describe 'magical', ->
-      it 'is an object', ->
-        MagicalFoo = magical('foo')
-        (new MagicalFoo).should.have.property('magical').be.an 'object'
-
-      describe 'formatted', ->
+      describe 'titles', ->
         it 'is an object', ->
-          MagicalFoo = magical('foo')
-          (new MagicalFoo).magical.should.have.property('formatted').be.an 'object'
+          magical('foo').magical.should.have.property('titles').be.an 'object'
 
-      describe 'title', ->
-        it 'is a formatted string', ->
-          MagicalFoo = magical('foo')
-          (new MagicalFoo).magical.should.have.property('title').be.a 'string'
+        describe 'plural', ->
+          it 'is a string', ->
+            magical('foo').magical.titles.should.have.property('plural').be.a 'string'
+
+        describe 'singular', ->
+          it 'is a string', ->
+            magical('foo').magical.titles.should.have.property('singular').be.a 'string'
+
+        describe 'record', ->
+          it 'is a function', ->
+            magical('foo').magical.titles.should.have.property('record').be.a 'function'
