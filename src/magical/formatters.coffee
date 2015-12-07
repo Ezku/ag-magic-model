@@ -1,8 +1,10 @@
-formats = require './formats'
+createFormats = require './formats'
 
 id = (v) -> v
 
-module.exports = (schemaFields) ->
+module.exports = (createMagicModel, schemaFields) ->
+  formats = createFormats(createMagicModel)
+
   formatters = {}
 
   for fieldName, fieldSchema of schemaFields

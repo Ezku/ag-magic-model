@@ -1,5 +1,4 @@
 moment = require 'moment/min/moment.min.js'
-magical = require '../index.coffee'
 
 nullable = (formatField) -> (value) ->
   if !value?
@@ -7,7 +6,7 @@ nullable = (formatField) -> (value) ->
   else
     formatField value
 
-module.exports = formats =
+module.exports = formats = (createMagicModel) ->
   date: (fieldSchema) ->
     format = fieldSchema?.metadata?.format ? "YYYY-MM-DD"
 
@@ -18,7 +17,7 @@ module.exports = formats =
     file.meta?.name ? file.key
 
   relation: (fieldSchema) ->
-    relationTargetModel = magical fieldSchema.metadata.collection
+    relationTargetModel = createMagicModel fieldSchema.metadata.collection
 
     (relation) ->
       ###
@@ -34,7 +33,7 @@ module.exports = formats =
           "« One #{relationTargetModel.magical.titles.singular} record »"
 
   multirelation: (fieldSchema) ->
-    relationTargetModel = magical fieldSchema.metadata.collection
+    relationTargetModel = createMagicModel fieldSchema.metadata.collection
 
     (multirelation) ->
       ###

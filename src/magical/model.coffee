@@ -7,12 +7,12 @@ sprinkleMagicProps = (object, getProps) ->
     enumerable: false
     get: getProps
 
-module.exports = magical = (ModelClass, definition, modelName) ->
+module.exports = magical = (createMagicModel, ModelClass, definition, modelName) ->
   class MagicalModel extends ModelClass
 
   schema = definition.schema || {}
   schemaFields = schema.fields || {}
-  formatters = createFormatters schemaFields
+  formatters = createFormatters createMagicModel, schemaFields
 
   sprinkleMagicProps MagicalModel, ->
     name: modelName

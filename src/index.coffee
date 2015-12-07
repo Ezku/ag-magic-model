@@ -11,6 +11,7 @@ module.exports = createMagicModel = (modelName, args...) ->
   resourceDefinition = getResourceDefinition modelName
 
   makeMagicalModel(
+    createMagicModel
     Model
     resourceDefinition
     modelName
