@@ -2,23 +2,39 @@ labels = require './labels'
 createFormatters = require './formatters'
 titleAccessors = require './titles'
 
-sprinkleMagicProps = (object, getProps) ->
-  Object.defineProperty object, 'magical',
-    enumerable: false
-    get: getProps
+sprinkleLazyMagicProps = (object, propGetters) ->
 
-module.exports = magical = (ModelClass, definition, modelName) ->
+  props = {}
+  for propName, propGetter of propGetters
+    Object.defineProperty props, propName, {
+      enumerable: true
+      get: propGetter
+    }
+
+  Object.defineProperty object, 'magical', {
+    enumerable: false
+    get: -> props
+  }
+
+lazy = (f) ->
+  value = null
+  () ->
+    value ? (value = f())
+
+module.exports = magical = (createMagicModel, ModelClass, definition, modelName) ->
   class MagicalModel extends ModelClass
 
   schema = definition.schema || {}
   schemaFields = schema.fields || {}
-  formatters = createFormatters schemaFields
 
-  sprinkleMagicProps MagicalModel, ->
-    name: modelName
-    definition: definition
-    label: labels ModelClass, schemaFields
+  formatters = lazy -> createFormatters createMagicModel, schemaFields
+
+  sprinkleLazyMagicProps MagicalModel, {
+    name: -> modelName
+    definition: -> definition
     formatter: formatters
-    titles: titleAccessors definition, formatters
+    label: lazy -> labels ModelClass, schemaFields
+    titles: lazy -> titleAccessors definition, formatters()
+  }
 
   MagicalModel
