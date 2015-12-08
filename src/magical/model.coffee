@@ -1,5 +1,3 @@
-memoize = require 'memoizee'
-
 labels = require './labels'
 createFormatters = require './formatters'
 titleAccessors = require './titles'
@@ -18,20 +16,25 @@ sprinkleLazyMagicProps = (object, propGetters) ->
     get: -> props
   }
 
+lazy = (f) ->
+  value = null
+  () ->
+    value ? (value = f())
+
 module.exports = magical = (createMagicModel, ModelClass, definition, modelName) ->
   class MagicalModel extends ModelClass
 
   schema = definition.schema || {}
   schemaFields = schema.fields || {}
 
-  formatters = memoize -> createFormatters createMagicModel, schemaFields
+  formatters = lazy -> createFormatters createMagicModel, schemaFields
 
   sprinkleLazyMagicProps MagicalModel, {
     name: -> modelName
     definition: -> definition
-    label: memoize -> labels ModelClass, schemaFields
     formatter: formatters
-    titles: memoize -> titleAccessors definition, formatters()
+    label: lazy -> labels ModelClass, schemaFields
+    titles: lazy -> titleAccessors definition, formatters()
   }
 
   MagicalModel
