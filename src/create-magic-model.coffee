@@ -2,9 +2,14 @@ memoize = require 'memoizee'
 
 makeMagicalModel = require './magical/model'
 
-module.exports = createMagicModel = ({createModel, getResourceDefinition}) ->
+memoizeWithDynamicArguments = (f) ->
+  memoize f, {
+    length: false
+  }
 
-  memoize (modelName, args...) ->
+module.exports = ({createModel, getResourceDefinition}) ->
+
+  createMagicModel = memoizeWithDynamicArguments (modelName, args...) ->
     Model = createModel modelName, args...
     resourceDefinition = getResourceDefinition modelName
 
