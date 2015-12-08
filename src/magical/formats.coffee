@@ -44,17 +44,17 @@ module.exports = formats = (createMagicModel) ->
         when !multirelation?
           "« missing #{relationTargetModel.magical.titles.plural} »"
         when multirelation instanceof Array
-          switch multirelation.length
-            when 0
+          switch
+            when multirelation.length is 0
               "« No #{relationTargetModel.magical.titles.plural} »"
             else
               (relation.title for relation in multirelation).join ', '
         else
           count = relationsToArray(multirelation).length
-          switch count
-            when 0
+          switch
+            when count is 0
               "« No #{relationTargetModel.magical.titles.plural} »"
-            when 1
+            when count is 1
               "« One #{relationTargetModel.magical.titles.singular} »"
             else
               "« #{count} #{relationTargetModel.magical.titles.plural} »"
