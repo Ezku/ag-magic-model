@@ -1,3 +1,5 @@
+memoize = require 'memoizee'
+
 makeMagicalModel = require './magical/model'
 
 createModel = window?.supersonic?.data?.model ? ->
@@ -6,7 +8,7 @@ createModel = window?.supersonic?.data?.model ? ->
 getResourceDefinition = (modelName) ->
   window?.supersonic?.env?.data?.bundle?.resources[modelName] ? {}
 
-module.exports = createMagicModel = (modelName, args...) ->
+module.exports = createMagicModel = memoize (modelName, args...) ->
   Model = createModel modelName, args...
   resourceDefinition = getResourceDefinition modelName
 
