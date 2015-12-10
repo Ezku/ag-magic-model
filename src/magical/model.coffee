@@ -1,6 +1,7 @@
 labels = require './labels'
 createFormatters = require './formatters'
 titleAccessors = require './titles'
+routeAccessors = require './routes'
 
 sprinkleLazyMagicProps = (object, propGetters) ->
 
@@ -21,7 +22,7 @@ lazy = (f) ->
   () ->
     value ? (value = f())
 
-module.exports = magical = (createMagicModel, ModelClass, definition, modelName) ->
+module.exports = magical = (createMagicModel, ModelClass, definition, modelName, routes) ->
   class MagicalModel extends ModelClass
 
   schema = definition.schema || {}
@@ -35,6 +36,7 @@ module.exports = magical = (createMagicModel, ModelClass, definition, modelName)
     formatter: formatters
     label: lazy -> labels ModelClass, schemaFields
     titles: lazy -> titleAccessors definition, formatters()
+    routes: lazy -> routeAccessors modelName, routes
   }
 
   MagicalModel
