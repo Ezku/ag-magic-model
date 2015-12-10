@@ -45,3 +45,11 @@ describe "ag-magic-model", ->
         describe 'record', ->
           it 'is a function', ->
             magical('foo').magical.titles.should.have.property('record').be.a 'function'
+
+      describe 'routes', ->
+        it 'is an object', ->
+          magical('foo').magical.should.have.property('routes').be.an 'object'
+
+        describe 'new', ->
+          it 'is a string', ->
+            magical('foo').magical.routes.should.have.property('new').be.a 'string'

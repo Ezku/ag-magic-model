@@ -7,7 +7,7 @@ memoizeWithDynamicArguments = (f) ->
     length: false
   }
 
-module.exports = ({createModel, getResourceDefinition}) ->
+module.exports = ({createModel, getResourceDefinition, routes }) ->
 
   createMagicModel = memoizeWithDynamicArguments (modelName, args...) ->
     Model = createModel modelName, args...
@@ -18,5 +18,6 @@ module.exports = ({createModel, getResourceDefinition}) ->
       Model
       resourceDefinition
       modelName
+      routes
     )
 
