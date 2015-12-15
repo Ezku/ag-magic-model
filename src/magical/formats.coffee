@@ -17,6 +17,10 @@ module.exports = formats = (createMagicModel) ->
     file.meta?.name ? file.key
 
   relation: (fieldSchema) ->
+    if !fieldSchema.metadata?.collection?
+      return (anything) ->
+        "« #{fieldSchema.label} has no target collection »"
+
     relationTargetModel = createMagicModel fieldSchema.metadata.collection
 
     (relation) ->
@@ -33,6 +37,10 @@ module.exports = formats = (createMagicModel) ->
           "« One #{relationTargetModel.magical.titles.singular} record »"
 
   multirelation: (fieldSchema) ->
+    if !fieldSchema.metadata?.collection?
+      return (anything) ->
+        "« #{fieldSchema.label} has no target collection »"
+
     relationTargetModel = createMagicModel fieldSchema.metadata.collection
 
     (multirelation) ->
