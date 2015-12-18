@@ -41,63 +41,101 @@ module.exports = relations = (createMagicModel, ModelClass, modelName, titles, d
         )
   }
 
+flatten = (xs) ->
+  [].concat.apply([], xs)
+
+indexBy = (field, xs) ->
+  result = {}
+  for x in xs
+    result[x[field]] = x
+  result
+
 joinCollectionFields = (relationTargets, collectionChangeStream) ->
-  collectionChangeStream.flatMapLatest (collection) ->
-    collectionRecordPropertyJoinModifications(relationTargets, collection)
-      .map ({ collectionIndex, recordProperty, value }) ->
-        # Reconstruct the array with the indicated record's recordProperty
-        # mapped to the given value
-        for record, i in collection
-          if i is collectionIndex
-            # WARNING: Mutation here
-            record = collection[collectionIndex]
-            record[recordProperty] = value
-            record
-          else
-            record
+  relationTargetsByField = indexBy 'relationTargetField', relationTargets
 
+  # (collection) -> Map relationTargetField [ids]
+  collectionToJoinFieldIds = (collection) ->
+    targetsToIds = {}
 
-collectionRecordPropertyJoinModifications = (relationTargets, collection) ->
-  ###
-  Take the cartesian product of relation targets and collection records, then
-  add in whatever required for tracking changes
-  ###
-  Bacon
-    .fromArray(relationTargets)
-    .flatMap (relationTarget) ->
-      recordProperty = relationTarget.relationTargetField
-      relationType = relationTarget.relationType
-      forRelatedField = relatedFieldLoader(relationTarget)
-
-      Bacon.fromArray(
-        for record, collectionIndex in collection
-          {
-            collectionIndex
-            record
-          }
-      ).flatMap ({ collectionIndex, record }) ->
-        changes = switch relationType
-          when 'one'
-            relatedRecordId = record[recordProperty]
-            if !relatedRecordId
-              Bacon.never()
+    # Take the cartesian product of records and relation targets
+    # Map relation targets to record ids by the relation target field
+    for relationTargetField, relationTarget of relationTargetsByField
+      targetsToIds[relationTargetField] = flatten(
+        for record in collection
+          switch relationTarget.relationType
+            when 'one'
+              relatedRecordId = record[relationTargetField]
+              if !relatedRecordId
+                []
+              else
+                [relatedRecordId]
+            when 'many'
+              parseAsArray record[relationTargetField]
             else
-              forRelatedField.one(relatedRecordId)
-          when 'many'
-            relatedRecordIds = parseAsArray record[recordProperty]
-            forRelatedField.many(relatedRecordIds)
-          else
-            throw new Error "Unsupported relation type: #{relationType}"
+              []
+      )
 
-        changes.map (value) ->
-          {
-            collectionIndex
-            recordProperty
-            value
-          }
+    targetsToIds
+
+  # relationTargetFieldsToChangeBatches: (Map relationTargetField Batch([ids], Stream [relatedRecord]))
+  scanRelationTargetFieldsAsBatches = do ->
+    Batch = (relationTargetField, ids) ->
+      relationTarget = relationTargetsByField[relationTargetField]
+      records = relatedFieldLoader(relationTarget).many(ids)
+
+      {
+        ids
+        records
+      }
+
+    (relationTargetFieldsToChangeBatches, relationTargetFieldsToRecordIds) ->
+      for relationTargetField, ids of relationTargetFieldsToRecordIds
+        relationTargetFieldsToChangeBatches[relationTargetField] =
+          Batch(relationTargetField, ids)
+
+      relationTargetFieldsToChangeBatches
+
+  # A stream that accumulates the values to be filled in to fields of records
+  # in the collection stream.
+  # relationIdentityMap: Stream (Map relationTargetField (Map id relatedRecord))
+  relationIdentityMap = collectionChangeStream
+    .map(collectionToJoinFieldIds)
+    .scan({}, scanRelationTargetFieldsAsBatches)
+    .flatMapLatest(Bacon.combineTemplate)
+    .map (relationTargetFieldsToChangeBatches) ->
+      result = {}
+      for relationTargetField, batch of relationTargetFieldsToChangeBatches
+        result[relationTargetField] = indexBy 'id', batch.records
+      result
+
+  # Perform the inverse of collectionToJoinFieldIds – map relation fields to
+  # the loaded relation values
+  Bacon
+    .combineAsArray([collectionChangeStream, relationIdentityMap])
+    .map ([collection, relations]) ->
+      for record in collection
+        for relationTargetField, relationTarget of relationTargetsByField
+          target = record[relationTargetField]
+          switch relationTarget.relationType
+            when 'one'
+              if target
+                record[relationTargetField] = relations[relationTargetField][target]
+            when 'many'
+              ids = parseAsArray target
+              record[relationTargetField] = (
+                for id in ids
+                  relations[relationTargetField][id]
+              )
+
+        record
 
 relatedFieldLoader = ({ relationTargetModel, renderRelationTitle, relationType }) ->
   one: (relatedObjectId) ->
+    if false and typeof relatedObjectId isnt 'string'
+      # FIXME: There's a state leak that causes already loaded fields to get
+      # passed in as "relatedObjectId"
+      debugger
+
     debug "Related #{relationTargetModel.magical.titles.singular}:", relatedObjectId
 
     targetObjectPlaceholder(relationTargetModel, relatedObjectId)
