@@ -35,83 +35,74 @@ module.exports = relations = (createMagicModel, ModelClass, modelName, titles, d
       return ModelClass unless relationTargets.length
 
       all: (args...) ->
-        changes:
-          ModelClass
-            .all(args...)
-            .changes
-            .flatMapLatest(joinCollectionFields relationTargets)
+        changes: joinCollectionFields(
+          relationTargets
+          ModelClass.all(args...).changes
+        )
   }
 
-# TODO: Handle multiple relation targets
-joinCollectionFields = ([relationTarget]) ->
-  switch relationTarget.relationType
-    when 'one'
-      joinOneToCollectionRecords relationTarget
-    when 'many'
-      joinManyToCollectionRecords relationTarget
-    else
-      throw new Error "Unsupported relation type: #{relationTarget.relationType}"
+joinCollectionFields = (relationTargets, collectionChangeStream) ->
+  collectionChangeStream.flatMapLatest (collection) ->
+    collectionRecordPropertyJoinModifications(relationTargets, collection)
+      .map ({ collectionIndex, recordProperty, value }) ->
+        # WARNING: Mutation here
+        collection[collectionIndex][recordProperty] = value
+        collection
 
-joinOneToCollectionRecords = (relationTarget) ->
-  modelFieldName = relationTarget.relationTargetField
+collectionRecordPropertyJoinModifications = (relationTargets, collection) ->
+  ###
+  Take the cartesian product of relation targets and collection records, then
+  add in whatever required for tracking changes
+  ###
+  Bacon
+    .fromArray(relationTargets)
+    .flatMap (relationTarget) ->
+      recordProperty = relationTarget.relationTargetField
+      relationType = relationTarget.relationType
+      forRelatedField = relatedFieldLoader(relationTarget)
 
-  (collection) ->
-    forRelatedField = relatedFieldLoader(relationTarget)
-
-    Bacon.combineAsArray(
-      for record in collection then do (record) ->
-        relatedRecordId = record[modelFieldName]
-
-        if !relatedRecordId
-          Bacon.once record
-        else
-          forRelatedField
-            .one(relatedRecordId)
-            .changes
-            .map (relatedRecord) ->
-              # WARNING: Mutation here
-              record[modelFieldName] = relatedRecord
-              record
-    )
-
-joinManyToCollectionRecords = (relationTarget) ->
-  modelFieldName = relationTarget.relationTargetField
-
-  (collection) ->
-    forRelatedField = relatedFieldLoader(relationTarget)
-
-    Bacon.combineAsArray(
-      for record in collection then do (record) ->
-        relatedRecordIds = parseAsArray record[modelFieldName]
-
-        forRelatedField
-          .many(relatedRecordIds)
-          .changes
-          .map (relatedRecords) ->
-            # WARNING: Mutation here
-            record[modelFieldName] = relatedRecords
+      Bacon.fromArray(
+        for record, collectionIndex in collection
+          {
+            collectionIndex
             record
-    )
+          }
+      ).flatMap ({ collectionIndex, record }) ->
+        changes = switch relationType
+          when 'one'
+            relatedRecordId = record[recordProperty]
+            if !relatedRecordId
+              Bacon.never()
+            else
+              forRelatedField.one(relatedRecordId)
+          when 'many'
+            relatedRecordIds = parseAsArray record[recordProperty]
+            forRelatedField.many(relatedRecordIds)
+          else
+            throw new Error "Unsupported relation type: #{relationType}"
+
+        changes.map (value) ->
+          {
+            collectionIndex
+            recordProperty
+            value
+          }
 
 relatedFieldLoader = ({ relationTargetModel, renderRelationTitle, relationType }) ->
   one: (relatedObjectId) ->
     debug "Related #{relationTargetModel.magical.titles.singular}:", relatedObjectId
 
-    changes = targetObjectPlaceholder(relationTargetModel, relatedObjectId)
+    targetObjectPlaceholder(relationTargetModel, relatedObjectId)
       .merge(targetObjectUpdates relationTargetModel, relatedObjectId, renderRelationTitle)
-
-    { changes }
 
   many: (relatedObjectIds) ->
     debug "Related #{relationTargetModel.magical.titles.plural}:", relatedObjectIds
 
-    changes = Bacon.combineAsArray(
+    Bacon.combineAsArray(
       for relatedObjectId in relatedObjectIds || []
         targetObjectPlaceholder(relationTargetModel, relatedObjectId)
           .merge(targetObjectUpdates relationTargetModel, relatedObjectId, renderRelationTitle)
     )
-
-    { changes }
 
 parseAsArray = (stringifiedArrayOfIds) ->
   return [] if !stringifiedArrayOfIds
