@@ -1,5 +1,5 @@
 
-module.exports = getRelationTarget = (definition, modelFieldName, titles, createMagicModel) ->
+module.exports = getRelationTarget = (definition, titles, createMagicModel) -> (modelFieldName) ->
   relationFieldSchema = definition.schema.fields[modelFieldName]
 
   if !relationFieldSchema

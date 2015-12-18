@@ -8,32 +8,49 @@ Bacon = require '../external/Bacon'
 
 module.exports = relations = (createMagicModel, ModelClass, modelName, titles, definition) ->
 
-  join: (modelFieldName) ->
-    ###
-    KLUDGE: If the provided field is not a relation, return the ModelClass
-    in lieu of a Null Object for this join.
-    ###
-    relationTarget = try
-        getRelationTarget definition, modelFieldName, titles, createMagicModel
+  getRelationTargetByFieldName = getRelationTarget definition, titles, createMagicModel
+  modelFieldNamesToRelationTargets = (modelFieldNames) ->
+    relationTargets = []
+
+    for modelFieldName in modelFieldNames
+      try
+        relationTargets.push getRelationTargetByFieldName modelFieldName
       catch e
         debug(
           "Failed to load field '#{modelFieldName}' as a relation for:", modelName
           "Got error:", e
           "Falling through to original model load strategy."
         )
-        null
 
-    return ModelClass unless relationTarget?
+    relationTargets
 
-    all: (args...) ->
-      switch relationTarget.relationType
-        when 'one'
-          changes: ModelClass.all(args...).changes.flatMapLatest(joinOneToCollectionRecords relationTarget)
-        when 'many'
-          changes: ModelClass.all(args...).changes.flatMapLatest(joinManyToCollectionRecords relationTarget)
-        else
-          throw new Error "Unsupported relation type: #{relationTarget.relationType}"
+  return {
+    join: (modelFieldNames...) ->
+      relationTargets = modelFieldNamesToRelationTargets modelFieldNames
 
+      ###
+      KLUDGE: If the provided fields do not have at least one relation, return
+      the ModelClass in lieu of a Null Object for this join.
+      ###
+      return ModelClass unless relationTargets.length
+
+      all: (args...) ->
+        changes:
+          ModelClass
+            .all(args...)
+            .changes
+            .flatMapLatest(joinCollectionFields relationTargets)
+  }
+
+# TODO: Handle multiple relation targets
+joinCollectionFields = ([relationTarget]) ->
+  switch relationTarget.relationType
+    when 'one'
+      joinOneToCollectionRecords relationTarget
+    when 'many'
+      joinManyToCollectionRecords relationTarget
+    else
+      throw new Error "Unsupported relation type: #{relationTarget.relationType}"
 
 joinOneToCollectionRecords = (relationTarget) ->
   modelFieldName = relationTarget.relationTargetField
