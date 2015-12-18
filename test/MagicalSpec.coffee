@@ -53,3 +53,12 @@ describe "ag-magic-model", ->
         describe 'new', ->
           it 'is a string', ->
             magical('foo').magical.routes.should.have.property('new').be.a 'string'
+
+      describe 'relations', ->
+        it 'is an object', ->
+          magical('foo').magical.should.have.property('relations').be.an 'object'
+
+        describe 'join', ->
+          it 'is a function', ->
+            magical('foo').magical.relations.should.have.property('join').be.a 'function'
+
