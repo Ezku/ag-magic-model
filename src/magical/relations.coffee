@@ -45,9 +45,17 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
   collectionChangeStream.flatMapLatest (collection) ->
     collectionRecordPropertyJoinModifications(relationTargets, collection)
       .map ({ collectionIndex, recordProperty, value }) ->
-        # WARNING: Mutation here
-        collection[collectionIndex][recordProperty] = value
-        collection
+        # Reconstruct the array with the indicated record's recordProperty
+        # mapped to the given value
+        for record, i in collection
+          if i is collectionIndex
+            # WARNING: Mutation here
+            record = collection[collectionIndex]
+            record[recordProperty] = value
+            record
+          else
+            record
+
 
 collectionRecordPropertyJoinModifications = (relationTargets, collection) ->
   ###
