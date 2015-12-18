@@ -67,3 +67,45 @@ The formatted title for a specific record of this type.
 Access the formatter function for a field. Call the function with a field value to get it back as formatted.
 
 Formatting takes into account the field's type, and possible other configuration options defined in Composer. For instance, a field with they display type `date` will be formatted as `YYYY-MM-DD` by default, but this can be overridden by configuring the data field in Composer.
+
+
+### `Model.magical.relations`
+
+#### `Model.magical.relations.join(fields...).all(query)`
+
+Get a followable of `all` records such that they will get the contents of enumerated `fields` listed joined in asynchronously. For example:
+
+    Model.magical.relations
+        .join('foo', 'bar')
+        .all()
+        .changes
+        .onValue (record) ->
+            console.log {
+                foo: record.foo.title
+                bar: record.bar.title
+            }
+
+For a relation field, a field `foo` containing the id `123` will be replaced with:
+
+    id: 123
+    title: <the title for 123 rendered as a string>
+    record: <the Model instance for 123>
+
+For a multirelation field `foos` with `123` and `456`:
+
+    [
+        {
+            id: 123
+            title: <the title for 123 rendered as a string>
+            record: <the Model instance for 123>
+        }
+        {
+            id: 456
+            title: <the title for 456 rendered as a string>
+            record: <the Model instance for 456>
+        }
+    ]
+
+Because the join is done asynchronously, the contents will start as having a placeholder for the `title` and nothing for `record`.
+
+**NOTE:** Records and collections fetched via `join` are *read only*. It is not appropriate to `save()` such records: they have gotten their fields tampered with, and the underlying resource does not know how to map the joined contents back to their normalized representations.
