@@ -153,35 +153,36 @@ relatedFieldLoader = ({ relationTargetModel, renderRelationTitle, relationType }
   many: (relatedObjectIds) ->
     debug "Related #{relationTargetModel.magical.titles.plural}:", relatedObjectIds
 
+    foundRecordsToRelations = (collection) ->
+      for relatedObject in collection
+        id: relatedObject.id
+        title: renderRelationTitle relatedObject
+        record: relatedObject
+
+    addPlaceholdersForMissingRecords = (loadedRelations) ->
+      loadedIds = (relation.id for relation in loadedRelations)
+      loadedRelations.concat(
+        for id in relatedObjectIds when not (id in loadedIds)
+          {
+            id
+            title: "« Failed to load related #{relationTargetModel.magical.titles.singular} »"
+          }
+      )
+
+    placeholdersForRecordInitialState = (
+      for id in relatedObjectIds
+        {
+          id
+          title: "« Loading related #{relationTargetModel.magical.titles.singular} »"
+        }
+    )
+
     relationTargetModel
       .all(whereIdIn relatedObjectIds)
       .changes
-      # Handle found records
-      .map((collection) ->
-        for relatedObject in collection
-          id: relatedObject.id
-          title: renderRelationTitle relatedObject
-          record: relatedObject
-      )
-      # Handle missing records
-      .map((loadedRelations) ->
-        loadedIds = (relation.id for relation in loadedRelations)
-        loadedRelations.concat(
-          for id in relatedObjectIds when not (id in loadedIds)
-            {
-              id
-              title: "« Failed to load related #{relationTargetModel.magical.titles.singular} »"
-            }
-        )
-      )
-      # Handle initial state for records
-      .startWith(
-        for id in relatedObjectIds
-          {
-            id
-            title: "« Loading related #{relationTargetModel.magical.titles.singular} »"
-          }
-      )
+      .map(foundRecordsToRelations)
+      .map(addPlaceholdersForMissingRecords)
+      .startWith(placeholdersForRecordInitialState)
 
 parseAsArray = (stringifiedArrayOfIds) ->
   return [] if !stringifiedArrayOfIds
