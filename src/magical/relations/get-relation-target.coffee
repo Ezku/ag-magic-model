@@ -65,6 +65,7 @@ class RelationTarget
         new RelationTarget params
 
   extractTargetIds: -> []
+  assignRelationFields: ->
 
 class SingleRelationTarget extends RelationTarget
   extractTargetIds: (record) ->
@@ -74,9 +75,21 @@ class SingleRelationTarget extends RelationTarget
     else
       [relatedRecordId]
 
+  assignRelationFields: (record, relatedRecordsById) ->
+    recordId = record[@relationTargetField]
+    if recordId
+      record[@relationTargetField] = relatedRecordsById[recordId]
+
 class MultiRelationTarget extends RelationTarget
   extractTargetIds: (record) ->
     parseAsArray record[@relationTargetField]
+
+  assignRelationFields: (record, relatedRecordsById) ->
+    recordIds = parseAsArray record[@relationTargetField]
+    record[@relationTargetField] = (
+      for recordId in recordIds
+        relatedRecordsById[recordId]
+    )
 
 parseAsArray = (stringifiedArrayOfIds) ->
   return [] if !stringifiedArrayOfIds

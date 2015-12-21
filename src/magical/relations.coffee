@@ -117,17 +117,7 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
       # Protect records from side-effects by cloning collection before mutation
       for record in collection.clone()
         for relationTargetField, relationTarget of relationTargetsByField
-          target = record[relationTargetField]
-          switch relationTarget.relationType
-            when 'one'
-              if target
-                record[relationTargetField] = relations[relationTargetField][target]
-            when 'many'
-              ids = parseAsArray target
-              record[relationTargetField] = (
-                for id in ids
-                  relations[relationTargetField][id]
-              )
+          relationTarget.assignRelationFields record, relations[relationTargetField]
 
         record
 
