@@ -50,6 +50,12 @@ indexBy = (field, xs) ->
     result[x[field]] = x
   result
 
+unique = (xs) ->
+  result = []
+  for x in xs when not (x in result)
+    result.push x
+  result
+
 joinCollectionFields = (relationTargets, collectionChangeStream) ->
   relationTargetsByField = indexBy 'relationTargetField', relationTargets
 
@@ -81,7 +87,7 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
   scanRelationTargetFieldsAsBatches = do ->
     Batch = (relationTargetField, ids) ->
       relationTarget = relationTargetsByField[relationTargetField]
-      records = relatedFieldLoader(relationTarget).many(ids)
+      records = relatedFieldLoader(relationTarget).many(unique ids)
 
       {
         ids
