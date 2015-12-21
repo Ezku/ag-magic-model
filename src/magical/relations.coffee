@@ -1,3 +1,4 @@
+deepEquals = require 'deep-equal'
 debug = require('debug')('ag-magic-model:relations')
 
 getRelationTarget = require './relations/get-relation-target'
@@ -96,8 +97,13 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
 
     (relationTargetFieldsToChangeBatches, relationTargetFieldsToRecordIds) ->
       for relationTargetField, ids of relationTargetFieldsToRecordIds
-        relationTargetFieldsToChangeBatches[relationTargetField] =
-          Batch(relationTargetField, ids)
+        shouldAddBatch = (
+          !relationTargetFieldsToChangeBatches[relationTargetField]? or
+          !deepEquals(ids, relationTargetFieldsToChangeBatches[relationTargetField].ids)
+        )
+        if shouldAddBatch
+          relationTargetFieldsToChangeBatches[relationTargetField] =
+            Batch(relationTargetField, ids)
 
       relationTargetFieldsToChangeBatches
 
