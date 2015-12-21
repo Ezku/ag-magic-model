@@ -120,10 +120,3 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
           relationTarget.assignRelationFields record, relations[relationTargetField]
 
         record
-
-parseAsArray = (stringifiedArrayOfIds) ->
-  return [] if !stringifiedArrayOfIds
-  try
-    JSON.parse stringifiedArrayOfIds
-  catch error
-    []
