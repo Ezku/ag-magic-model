@@ -113,7 +113,8 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
   Bacon
     .combineAsArray([collectionChangeStream, relationIdentityMap])
     .map ([collection, relations]) ->
-      for record in collection
+      # Protect records from side-effects by cloning collection before mutation
+      for record in collection.clone()
         for relationTargetField, relationTarget of relationTargetsByField
           target = record[relationTargetField]
           switch relationTarget.relationType
@@ -131,11 +132,6 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
 
 relatedFieldLoader = ({ relationTargetModel, renderRelationTitle, relationType }) ->
   one: (relatedObjectId) ->
-    if false and typeof relatedObjectId isnt 'string'
-      # FIXME: There's a state leak that causes already loaded fields to get
-      # passed in as "relatedObjectId"
-      debugger
-
     debug "Related #{relationTargetModel.magical.titles.singular}:", relatedObjectId
 
     targetObjectPlaceholder(relationTargetModel, relatedObjectId)
