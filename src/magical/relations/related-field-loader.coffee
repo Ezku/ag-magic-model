@@ -4,14 +4,8 @@ module.exports = relatedFieldLoader = (relationTarget) ->
 
   { relationTargetModel, renderRelationTitle, relationType } = relationTarget
 
-  whereIdIn = (ids) ->
-    # FIXME: Why '_id'? Does this hold for all resource types, all sources?
-    query: JSON.stringify
-      _id:
-        $in: ids
-
   one: (relatedObjectId) ->
-    debug "Related #{relationTargetModel.magical.titles.singular}:", relatedObjectId
+    debug "Related #{relationTarget.titles.singular}:", relatedObjectId
 
     relationTargetModel
       .one(relatedObjectId)
@@ -23,11 +17,11 @@ module.exports = relatedFieldLoader = (relationTarget) ->
       )
       .startWith({
         id: relatedObjectId
-        title: "« Loading related #{relationTargetModel.magical.titles.singular} »"
+        title: "« Loading related #{relationTarget.titles.singular} »"
       })
 
   many: (relatedObjectIds) ->
-    debug "Related #{relationTargetModel.magical.titles.plural}:", relatedObjectIds
+    debug "Related #{relationTarget.titles.plural}:", relatedObjectIds
 
     foundRecordsToRelations = (collection) ->
       for relatedObject in collection
@@ -41,7 +35,7 @@ module.exports = relatedFieldLoader = (relationTarget) ->
         for id in relatedObjectIds when not (id in loadedIds)
           {
             id
-            title: "« Failed to load related #{relationTargetModel.magical.titles.singular} »"
+            title: "« Failed to load related #{relationTarget.titles.singular} »"
           }
       )
 
@@ -49,13 +43,17 @@ module.exports = relatedFieldLoader = (relationTarget) ->
       for id in relatedObjectIds
         {
           id
-          title: "« Loading related #{relationTargetModel.magical.titles.singular} »"
+          title: "« Loading related #{relationTarget.titles.singular} »"
         }
     )
 
     relationTargetModel
-      .all(whereIdIn relatedObjectIds)
+      .all(relationTarget.whereIdInQuery relatedObjectIds)
       .changes
+      .doAction((us) ->
+        # FIXME: Why does loading users take a lot of time and sometimes never happen?
+        debugger if relationType is 'user'
+      )
       .map(foundRecordsToRelations)
       .map(addPlaceholdersForMissingRecords)
       .startWith(placeholdersForRecordInitialState)

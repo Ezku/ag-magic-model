@@ -1,13 +1,20 @@
 
 module.exports = (definition, titles, createMagicModel) ->
 
-  getRelationTargetModel = (modelFieldName, relationFieldSchema) ->
+  getRelationTargetModel = (relationType, modelFieldName, relationFieldSchema) ->
+    if relationType is 'user'
+      return supersonic.auth.users
+
     if !relationFieldSchema.metadata?.collection?
       throw new Error "Field #{modelFieldName} does not appear to be a relation: missing target collection"
 
     relationTargetModel = createMagicModel relationFieldSchema.metadata.collection
 
-  getRelationTitleRenderer = (relationFieldSchema, relationTargetModel) ->
+  getRelationTitleRenderer = (relationType, relationFieldSchema, relationTargetModel) ->
+    if relationType is 'user'
+      return (user) ->
+        user.metadata?.name ? user.username
+
     ###
     Collection field represents the requested title field when rendering this relation.
 
@@ -42,11 +49,13 @@ module.exports = (definition, titles, createMagicModel) ->
         'many'
       when 'relation'
         'one'
+      when 'user'
+        'user'
       else
         throw new Error "Field #{modelFieldName} does not appear to be a relation: expected relation type, got '#{relationFieldSchema.display_type}'"
 
-    relationTargetModel = getRelationTargetModel modelFieldName, relationFieldSchema
-    renderRelationTitle = getRelationTitleRenderer relationFieldSchema, relationTargetModel
+    relationTargetModel = getRelationTargetModel relationType, modelFieldName, relationFieldSchema
+    renderRelationTitle = getRelationTitleRenderer relationType, relationFieldSchema, relationTargetModel
 
     RelationTarget.of {
       relationTargetField: modelFieldName
@@ -62,6 +71,7 @@ class RelationTarget
     @renderRelationTitle
     @relationType
   }) ->
+    @titles ?= @relationTargetModel.magical.titles
 
   @of: (params = {}) ->
     switch params.relationType
@@ -69,11 +79,18 @@ class RelationTarget
         new SingleRelationTarget params
       when 'many'
         new MultiRelationTarget params
+      when 'user'
+        new UserRelationTarget params
       else
         new RelationTarget params
 
   extractTargetIds: -> []
   assignRelationFields: ->
+  whereIdInQuery: (ids) ->
+    # FIXME: Why '_id'? Does this hold for all resource types, all sources?
+    query: JSON.stringify
+      _id:
+        $in: ids
 
 class SingleRelationTarget extends RelationTarget
   extractTargetIds: (record) ->
@@ -98,6 +115,15 @@ class MultiRelationTarget extends RelationTarget
       for recordId in recordIds
         relatedRecordsById[recordId]
     )
+
+class UserRelationTarget extends SingleRelationTarget
+  titles:
+    singular: 'user'
+    plural: 'users'
+
+  whereIdInQuery: (ids) ->
+    # FIXME: API does not appear to support querying by id
+    query: JSON.stringify {}
 
 parseAsArray = (stringifiedArrayOfIds) ->
   return [] if !stringifiedArrayOfIds
