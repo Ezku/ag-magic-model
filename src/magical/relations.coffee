@@ -41,21 +41,6 @@ module.exports = relations = (createMagicModel, ModelClass, modelName, titles, d
         )
   }
 
-flatten = (xs) ->
-  [].concat.apply([], xs)
-
-indexBy = (field, xs) ->
-  result = {}
-  for x in xs
-    result[x[field]] = x
-  result
-
-unique = (xs) ->
-  result = []
-  for x in xs when not (x in result)
-    result.push x
-  result
-
 joinCollectionFields = (relationTargets, collectionChangeStream) ->
   relationTargetsByField = indexBy 'relationTargetField', relationTargets
 
@@ -120,3 +105,18 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
           relationTarget.assignRelationFields record, relations[relationTargetField]
 
         record
+
+flatten = (xs) ->
+  [].concat.apply([], xs)
+
+indexBy = (field, xs) ->
+  result = {}
+  for x in xs
+    result[x[field]] = x
+  result
+
+unique = (xs) ->
+  result = []
+  for x in xs when not (x in result)
+    result.push x
+  result
