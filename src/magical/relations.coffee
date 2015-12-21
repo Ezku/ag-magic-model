@@ -68,17 +68,7 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
     for relationTargetField, relationTarget of relationTargetsByField
       targetsToIds[relationTargetField] = flatten(
         for record in collection
-          switch relationTarget.relationType
-            when 'one'
-              relatedRecordId = record[relationTargetField]
-              if !relatedRecordId
-                []
-              else
-                [relatedRecordId]
-            when 'many'
-              parseAsArray record[relationTargetField]
-            else
-              []
+          relationTarget.extractTargetIds record
       )
 
     targetsToIds
@@ -140,7 +130,6 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
               )
 
         record
-
 
 parseAsArray = (stringifiedArrayOfIds) ->
   return [] if !stringifiedArrayOfIds

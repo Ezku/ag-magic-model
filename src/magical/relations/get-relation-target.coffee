@@ -40,9 +40,48 @@ module.exports = getRelationTarget = (definition, titles, createMagicModel) -> (
       (record) ->
         formatTitle(record[titleField])
 
-  {
+  RelationTarget.of {
     relationTargetField: modelFieldName
     relationTargetModel
     renderRelationTitle
     relationType
   }
+
+class RelationTarget
+  constructor: ({
+    @relationTargetField
+    @relationTargetModel
+    @renderRelationTitle
+    @relationType
+  }) ->
+
+  @of: (params = {}) ->
+    switch params.relationType
+      when 'one'
+        new SingleRelationTarget params
+      when 'many'
+        new MultiRelationTarget params
+      else
+        new RelationTarget params
+
+  extractTargetIds: -> []
+
+class SingleRelationTarget extends RelationTarget
+  extractTargetIds: (record) ->
+    relatedRecordId = record[@relationTargetField]
+    if !relatedRecordId
+      []
+    else
+      [relatedRecordId]
+
+class MultiRelationTarget extends RelationTarget
+  extractTargetIds: (record) ->
+    parseAsArray record[@relationTargetField]
+
+parseAsArray = (stringifiedArrayOfIds) ->
+  return [] if !stringifiedArrayOfIds
+  try
+    JSON.parse stringifiedArrayOfIds
+  catch error
+    []
+
