@@ -137,6 +137,13 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
         record
 
 relatedFieldLoader = ({ relationTargetModel, renderRelationTitle, relationType }) ->
+
+  whereIdIn = (ids) ->
+    # FIXME: Why '_id'? Does this hold for all resource types, all sources?
+    query: JSON.stringify
+      _id:
+        $in: ids
+
   one: (relatedObjectId) ->
     debug "Related #{relationTargetModel.magical.titles.singular}:", relatedObjectId
 
@@ -146,11 +153,35 @@ relatedFieldLoader = ({ relationTargetModel, renderRelationTitle, relationType }
   many: (relatedObjectIds) ->
     debug "Related #{relationTargetModel.magical.titles.plural}:", relatedObjectIds
 
-    Bacon.combineAsArray(
-      for relatedObjectId in relatedObjectIds || []
-        targetObjectPlaceholder(relationTargetModel, relatedObjectId)
-          .merge(targetObjectUpdates relationTargetModel, relatedObjectId, renderRelationTitle)
-    )
+    relationTargetModel
+      .all(whereIdIn relatedObjectIds)
+      .changes
+      # Handle found records
+      .map((collection) ->
+        for relatedObject in collection
+          id: relatedObject.id
+          title: renderRelationTitle relatedObject
+          record: relatedObject
+      )
+      # Handle missing records
+      .map((loadedRelations) ->
+        loadedIds = (relation.id for relation in loadedRelations)
+        loadedRelations.concat(
+          for id in relatedObjectIds when not (id in loadedIds)
+            {
+              id
+              title: "« Failed to load related #{relationTargetModel.magical.titles.singular} »"
+            }
+        )
+      )
+      # Handle initial state for records
+      .startWith(
+        for id in relatedObjectIds
+          {
+            id
+            title: "« Loading related #{relationTargetModel.magical.titles.singular} »"
+          }
+      )
 
 parseAsArray = (stringifiedArrayOfIds) ->
   return [] if !stringifiedArrayOfIds
