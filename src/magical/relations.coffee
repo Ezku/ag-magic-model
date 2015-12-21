@@ -2,8 +2,6 @@ deepEquals = require 'deep-equal'
 debug = require('debug')('ag-magic-model:relations')
 
 getRelationTarget = require './relations/get-relation-target'
-targetObjectPlaceholder = require './relations/target-object-placeholder'
-targetObjectUpdates = require './relations/target-object-updates'
 
 Bacon = require '../external/Bacon'
 
@@ -153,8 +151,18 @@ relatedFieldLoader = ({ relationTargetModel, renderRelationTitle, relationType }
   one: (relatedObjectId) ->
     debug "Related #{relationTargetModel.magical.titles.singular}:", relatedObjectId
 
-    targetObjectPlaceholder(relationTargetModel, relatedObjectId)
-      .merge(targetObjectUpdates relationTargetModel, relatedObjectId, renderRelationTitle)
+    relationTargetModel
+      .one(relatedObjectId)
+      .changes
+      .map((relatedObject) ->
+        id: relatedObject.id
+        title: renderRelationTitle relatedObject
+        record: relatedObject
+      )
+      .startWith({
+        id: relatedObjectId
+        title: "« Loading related #{relationTargetModel.magical.titles.singular} »"
+      })
 
   many: (relatedObjectIds) ->
     debug "Related #{relationTargetModel.magical.titles.plural}:", relatedObjectIds
