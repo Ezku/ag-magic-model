@@ -109,3 +109,22 @@ For a multirelation field `foos` with `123` and `456`:
 Because the join is done asynchronously, the contents will start as having a placeholder for the `title` and nothing for `record`.
 
 **NOTE:** Records and collections fetched via `join` are *read only*. It is not appropriate to `save()` such records: they have gotten their fields tampered with, and the underlying resource does not know how to map the joined contents back to their normalized representations.
+
+#### `Model.magical.relations.related(field).many(ids)`
+
+Get a followable of `many` records loaded by `ids` as a collection of related records that will get their contents asynchronously.
+
+    Model.magical.relations
+        .related('foo')
+        .many([123, 456])
+        .changes
+        .onValue (collection) ->
+            console.log collection
+
+The collection's signature is the same as with `Model.magical.relations.join`.
+
+#### `Model.magical.relations.related(field).one(id)`
+
+Get a followable of `one` record loaded by `ids` such that it will get its contents asynchronously.
+
+The record's signature is the same as with records from `Model.magical.relations.join`.
