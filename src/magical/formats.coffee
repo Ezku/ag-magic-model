@@ -67,6 +67,16 @@ module.exports = formats = (createMagicModel) ->
             else
               "« #{count} #{relationTargetModel.magical.titles.plural} »"
 
+  user: (fieldSchema) ->
+    (user) ->
+      switch
+        when !user
+          "« missing user »"
+        when user.id? and user.title?
+          user.title
+        else
+          user.metadata?.name ? user.username
+
 relationsToArray = (input) ->
   switch
     when typeof input is 'string'
