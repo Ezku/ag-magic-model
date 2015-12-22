@@ -7,18 +7,20 @@ module.exports = relatedFieldLoader = (relationTarget) ->
   one: (relatedObjectId) ->
     debug "Related #{relationTarget.titles.singular}:", relatedObjectId
 
-    relationTargetModel
-      .one(relatedObjectId)
-      .changes
-      .map((relatedObject) ->
-        id: relatedObject.id
-        title: renderRelationTitle relatedObject
-        record: relatedObject
-      )
-      .startWith({
-        id: relatedObjectId
-        title: "« Loading related #{relationTarget.titles.singular} »"
-      })
+    return {
+      changes: relationTargetModel
+        .one(relatedObjectId)
+        .changes
+        .map((relatedObject) ->
+          id: relatedObject.id
+          title: renderRelationTitle relatedObject
+          record: relatedObject
+        )
+        .startWith({
+          id: relatedObjectId
+          title: "« Loading related #{relationTarget.titles.singular} »"
+        })
+    }
 
   many: (relatedObjectIds) ->
     debug "Related #{relationTarget.titles.plural}:", relatedObjectIds
@@ -47,9 +49,11 @@ module.exports = relatedFieldLoader = (relationTarget) ->
         }
     )
 
-    relationTargetModel
-      .all(relationTarget.whereIdInQuery relatedObjectIds)
-      .changes
-      .map(foundRecordsToRelations)
-      .map(addPlaceholdersForMissingRecords)
-      .startWith(placeholdersForRecordInitialState)
+    return {
+      changes: relationTargetModel
+        .all(relationTarget.whereIdInQuery relatedObjectIds)
+        .changes
+        .map(foundRecordsToRelations)
+        .map(addPlaceholdersForMissingRecords)
+        .startWith(placeholdersForRecordInitialState)
+    }

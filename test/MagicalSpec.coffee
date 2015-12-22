@@ -62,3 +62,6 @@ describe "ag-magic-model", ->
           it 'is a function', ->
             magical('foo').magical.relations.should.have.property('join').be.a 'function'
 
+        describe 'related', ->
+          it 'is a function', ->
+            magical('foo').magical.relations.should.have.property('related').be.a 'function'

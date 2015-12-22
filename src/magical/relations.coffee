@@ -25,6 +25,10 @@ module.exports = relations = (createMagicModel, ModelClass, modelName, titles, d
     relationTargets
 
   return {
+    related: (modelFieldName) ->
+      relationTarget = getRelationTargetByFieldName modelFieldName
+      relatedFieldLoader relationTarget
+
     join: (modelFieldNames...) ->
       relationTargets = modelFieldNamesToRelationTargets modelFieldNames
 
@@ -62,7 +66,7 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
   scanRelationTargetFieldsAsBatches = do ->
     Batch = (relationTargetField, ids) ->
       relationTarget = relationTargetsByField[relationTargetField]
-      records = relatedFieldLoader(relationTarget).many(unique ids)
+      records = relatedFieldLoader(relationTarget).many(unique ids).changes
 
       {
         ids

@@ -27,10 +27,9 @@ module.exports = (definition, titles, createMagicModel) ->
     the record's default title.
     FIXME: The title may also require resolving relations, making this recursive.
     ###
+    collectionFieldDisplayType = relationTargetModel.magical.definition.schema.fields[collectionFieldName].display_type
     renderRelationTitle = switch
-      when relationTargetModel.magical.definition.schema.fields[collectionFieldName].display_type is 'multirelation'
-        relationTargetModel.magical.titles.record
-      when relationTargetModel.magical.definition.schema.fields[collectionFieldName].display_type is 'relation'
+      when collectionFieldDisplayType in ['multirelation', 'relation', 'user']
         relationTargetModel.magical.titles.record
       else
         titleField = collectionFieldName
