@@ -66,7 +66,7 @@ joinCollectionFields = (relationTargets, collectionChangeStream) ->
   scanRelationTargetFieldsAsBatches = do ->
     Batch = (relationTargetField, ids) ->
       relationTarget = relationTargetsByField[relationTargetField]
-      records = relatedFieldLoader(relationTarget).many(unique ids)
+      records = relatedFieldLoader(relationTarget).many(unique ids).changes
 
       {
         ids
