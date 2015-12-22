@@ -28,11 +28,20 @@ module.exports = relatedFieldLoader = (relationTarget) ->
   one: (relatedObjectId) ->
     debug "Related #{relationTarget.titles.singular}:", relatedObjectId
 
+    recordChanges = relationTargetModel.one(relatedObjectId).changes
+
+    unrecoverableError = recordChanges
+      .errors()
+      .mapError((e) -> e)
+      # FIXME: Does not actually check for unrecoverability.
+      # KLUDGE: Proxy responds with 200 OK, not 404 after record deletion
+      # .filter((e) -> e.unrecoverable)
+
     return {
-      changes: relationTargetModel
-        .one(relatedObjectId)
-        .changes
+      changes: recordChanges
+        .takeUntil(unrecoverableError)
         .map(RelatedRecord)
+        .merge(unrecoverableError.map -> MissingRelatedRecord relatedObjectId)
         .startWith(LoadingRelatedRecord(relatedObjectId))
     }
 
