@@ -4,6 +4,27 @@ module.exports = relatedFieldLoader = (relationTarget) ->
 
   { relationTargetModel, renderRelationTitle, relationType } = relationTarget
 
+  LoadingRelatedRecord = (id) ->
+    {
+      id
+      loading: true
+      title: "« Loading related #{relationTarget.titles.singular} »"
+    }
+
+  MissingRelatedRecord = (id) ->
+    {
+      id
+      failed: true
+      title: "« Failed to load related #{relationTarget.titles.singular} »"
+    }
+
+  RelatedRecord = (record) ->
+    {
+      id: record.id
+      record
+      title: renderRelationTitle record
+    }
+
   one: (relatedObjectId) ->
     debug "Related #{relationTarget.titles.singular}:", relatedObjectId
 
@@ -11,15 +32,8 @@ module.exports = relatedFieldLoader = (relationTarget) ->
       changes: relationTargetModel
         .one(relatedObjectId)
         .changes
-        .map((relatedObject) ->
-          id: relatedObject.id
-          title: renderRelationTitle relatedObject
-          record: relatedObject
-        )
-        .startWith({
-          id: relatedObjectId
-          title: "« Loading related #{relationTarget.titles.singular} »"
-        })
+        .map(RelatedRecord)
+        .startWith(LoadingRelatedRecord(relatedObjectId))
     }
 
   many: (relatedObjectIds) ->
@@ -27,26 +41,18 @@ module.exports = relatedFieldLoader = (relationTarget) ->
 
     foundRecordsToRelations = (collection) ->
       for relatedObject in collection
-        id: relatedObject.id
-        title: renderRelationTitle relatedObject
-        record: relatedObject
+        RelatedRecord relatedObject
 
     addPlaceholdersForMissingRecords = (loadedRelations) ->
       loadedIds = (relation.id for relation in loadedRelations)
       loadedRelations.concat(
         for id in relatedObjectIds when not (id in loadedIds)
-          {
-            id
-            title: "« Failed to load related #{relationTarget.titles.singular} »"
-          }
+          MissingRelatedRecord id
       )
 
     placeholdersForRecordInitialState = (
       for id in relatedObjectIds
-        {
-          id
-          title: "« Loading related #{relationTarget.titles.singular} »"
-        }
+        LoadingRelatedRecord id
     )
 
     return {
