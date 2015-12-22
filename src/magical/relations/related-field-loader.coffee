@@ -50,10 +50,6 @@ module.exports = relatedFieldLoader = (relationTarget) ->
     relationTargetModel
       .all(relationTarget.whereIdInQuery relatedObjectIds)
       .changes
-      .doAction((us) ->
-        # FIXME: Why does loading users take a lot of time and sometimes never happen?
-        debugger if relationType is 'user'
-      )
       .map(foundRecordsToRelations)
       .map(addPlaceholdersForMissingRecords)
       .startWith(placeholdersForRecordInitialState)
