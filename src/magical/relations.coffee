@@ -25,6 +25,10 @@ module.exports = relations = (createMagicModel, ModelClass, modelName, titles, d
     relationTargets
 
   return {
+    related: (modelFieldName) ->
+      relationTarget = getRelationTargetByFieldName modelFieldName
+      relatedFieldLoader relationTarget
+
     join: (modelFieldNames...) ->
       relationTargets = modelFieldNamesToRelationTargets modelFieldNames
 
