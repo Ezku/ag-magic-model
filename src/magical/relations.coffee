@@ -39,76 +39,104 @@ module.exports = relations = (createMagicModel, ModelClass, modelName, titles, d
       return ModelClass unless relationTargets.length
 
       all: (args...) ->
-        changes: joinCollectionFields(
-          relationTargets
+        changes: joinFields(relationTargets).inCollectionStream(
           ModelClass.all(args...).changes
+        )
+
+      one: (args...) ->
+        changes: joinFields(relationTargets).inRecordStream(
+          ModelClass.one(args...).changes
         )
   }
 
-joinCollectionFields = (relationTargets, collectionChangeStream) ->
+joinFields = (relationTargets) ->
   relationTargetsByField = indexBy 'relationTargetField', relationTargets
 
-  # (collection) -> Map relationTargetField [ids]
-  collectionToJoinFieldIds = (collection) ->
-    targetsToIds = {}
+  loadRelationTargetsInBatches = do ->
+    # relationTargetFieldsToChangeBatches: (Map relationTargetField Batch([ids], Stream [relatedRecord]))
+    scanRelationTargetFieldsAsBatches = do ->
+      Batch = (relationTargetField, ids) ->
+        relationTarget = relationTargetsByField[relationTargetField]
+        records = relatedFieldLoader(relationTarget).many(unique ids).changes
 
-    # Take the cartesian product of records and relation targets
-    # Map relation targets to record ids by the relation target field
-    for relationTargetField, relationTarget of relationTargetsByField
-      targetsToIds[relationTargetField] = flatten(
-        for record in collection
-          relationTarget.extractTargetIds record
-      )
+        {
+          ids
+          records
+        }
 
-    targetsToIds
+      (relationTargetFieldsToChangeBatches, relationTargetFieldsToRecordIds) ->
+        for relationTargetField, ids of relationTargetFieldsToRecordIds
+          shouldAddBatch = (
+            !relationTargetFieldsToChangeBatches[relationTargetField]? or
+            !deepEquals(ids, relationTargetFieldsToChangeBatches[relationTargetField].ids)
+          )
+          if shouldAddBatch
+            relationTargetFieldsToChangeBatches[relationTargetField] =
+              Batch(relationTargetField, ids)
 
-  # relationTargetFieldsToChangeBatches: (Map relationTargetField Batch([ids], Stream [relatedRecord]))
-  scanRelationTargetFieldsAsBatches = do ->
-    Batch = (relationTargetField, ids) ->
-      relationTarget = relationTargetsByField[relationTargetField]
-      records = relatedFieldLoader(relationTarget).many(unique ids).changes
+        relationTargetFieldsToChangeBatches
 
-      {
-        ids
-        records
-      }
+    # loadRelationTargetsInBatches: (
+    #   idsByRelationFieldStream: Stream (Map relationTargetField [ids])
+    # ) -> Stream (Map relationTargetField (Map id relatedRecord))
+    (idsByRelationFieldStream) ->
+      # A stream that accumulates the values to be filled in to fields of records
+      # in the collection stream.
+      relationIdentityMap = idsByRelationFieldStream
+        .scan({}, scanRelationTargetFieldsAsBatches)
+        .flatMapLatest(Bacon.combineTemplate)
+        .map (relationTargetFieldsToChangeBatches) ->
+          result = {}
+          for relationTargetField, batch of relationTargetFieldsToChangeBatches
+            result[relationTargetField] = indexBy 'id', batch.records
+          result
 
-    (relationTargetFieldsToChangeBatches, relationTargetFieldsToRecordIds) ->
-      for relationTargetField, ids of relationTargetFieldsToRecordIds
-        shouldAddBatch = (
-          !relationTargetFieldsToChangeBatches[relationTargetField]? or
-          !deepEquals(ids, relationTargetFieldsToChangeBatches[relationTargetField].ids)
+  relationLoader = ({ extractTargetIds, mapEachTargetRecord }) -> (changeStream) ->
+    idsByRelationFieldStream = changeStream.map (relationSource) ->
+      targetsToIds = {}
+
+      # Take the cartesian product of records and relation targets
+      # Map relation targets to record ids by the relation target field
+      for relationTargetField, relationTarget of relationTargetsByField
+        targetsToIds[relationTargetField] = extractTargetIds relationTarget, relationSource
+
+      targetsToIds
+
+    relationIdentityMap = loadRelationTargetsInBatches idsByRelationFieldStream
+
+    # Perform the inverse of groupRelatedIdsByField – map relation fields to
+    # the loaded relation values
+    Bacon
+      .combineAsArray([changeStream, relationIdentityMap])
+      .map ([target, relations]) ->
+        mapEachTargetRecord target, (record) ->
+          for relationTargetField, relationTarget of relationTargetsByField
+            relationTarget.assignRelationFields record, relations[relationTargetField]
+          record
+
+  return {
+    inRecordStream: relationLoader {
+      extractTargetIds: (relationTarget, record) ->
+        relationTarget.extractTargetIds record
+
+      mapEachTargetRecord: (record, f) ->
+        # Protect records from side-effects by cloning before mutation
+        f record.clone()
+    }
+
+    inCollectionStream: relationLoader {
+      extractTargetIds: (relationTarget, collection) ->
+        flatten(
+          for record in collection
+            relationTarget.extractTargetIds record
         )
-        if shouldAddBatch
-          relationTargetFieldsToChangeBatches[relationTargetField] =
-            Batch(relationTargetField, ids)
 
-      relationTargetFieldsToChangeBatches
-
-  # A stream that accumulates the values to be filled in to fields of records
-  # in the collection stream.
-  # relationIdentityMap: Stream (Map relationTargetField (Map id relatedRecord))
-  relationIdentityMap = collectionChangeStream
-    .map(collectionToJoinFieldIds)
-    .scan({}, scanRelationTargetFieldsAsBatches)
-    .flatMapLatest(Bacon.combineTemplate)
-    .map (relationTargetFieldsToChangeBatches) ->
-      result = {}
-      for relationTargetField, batch of relationTargetFieldsToChangeBatches
-        result[relationTargetField] = indexBy 'id', batch.records
-      result
-
-  # Perform the inverse of collectionToJoinFieldIds – map relation fields to
-  # the loaded relation values
-  Bacon
-    .combineAsArray([collectionChangeStream, relationIdentityMap])
-    .map ([collection, relations]) ->
-      # Protect records from side-effects by cloning collection before mutation
-      for record in collection.clone()
-        for relationTargetField, relationTarget of relationTargetsByField
-          relationTarget.assignRelationFields record, relations[relationTargetField]
-
-        record
+      mapEachTargetRecord: (collection, f) ->
+        # Protect records from side-effects by cloning collection before mutation
+        for record in collection.clone()
+          f record
+    }
+  }
 
 flatten = (xs) ->
   [].concat.apply([], xs)
