@@ -71,6 +71,8 @@ Formatting takes into account the field's type, and possible other configuration
 
 ### `Model.magical.relations`
 
+**NOTE:** Records and collections fetched via `Model.magical.relations.join` are *read only*. It is not appropriate to `save()` such records: they have gotten their fields tampered with, and the underlying resource does not know how to map the joined contents back to their normalized representations.
+
 #### `Model.magical.relations.join(fields...).all(query)`
 
 Get a followable of `all` records such that they will get the contents of enumerated `fields` listed joined in asynchronously. For example:
@@ -108,7 +110,9 @@ For a multirelation field `foos` with `123` and `456`:
 
 Because the join is done asynchronously, the contents will start as having a placeholder for the `title` and nothing for `record`.
 
-**NOTE:** Records and collections fetched via `join` are *read only*. It is not appropriate to `save()` such records: they have gotten their fields tampered with, and the underlying resource does not know how to map the joined contents back to their normalized representations.
+#### `Model.magical.relations.join(fields...).one(id)`
+
+Get a followable of `one` record by id such that it will get the contents of enumerated `fields` listed joined in asynchronously. Works as `join().all()`, above.
 
 #### `Model.magical.relations.related(field).many(ids)`
 
