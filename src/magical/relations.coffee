@@ -91,14 +91,14 @@ joinFields = (relationTargets) ->
             result[relationTargetField] = indexBy 'id', batch.records
           result
 
-  relationLoader = ({ extractTargetIds, assignRelatedFields }) -> (changeStream) ->
-    idsByRelationFieldStream = changeStream.map (target) ->
+  relationLoader = ({ extractTargetIds, mapEachTargetRecord }) -> (changeStream) ->
+    idsByRelationFieldStream = changeStream.map (relationSource) ->
       targetsToIds = {}
 
       # Take the cartesian product of records and relation targets
       # Map relation targets to record ids by the relation target field
       for relationTargetField, relationTarget of relationTargetsByField
-        targetsToIds[relationTargetField] = extractTargetIds relationTarget, record
+        targetsToIds[relationTargetField] = extractTargetIds relationTarget, relationSource
 
       targetsToIds
 
@@ -108,20 +108,20 @@ joinFields = (relationTargets) ->
     # the loaded relation values
     Bacon
       .combineAsArray([changeStream, relationIdentityMap])
-      .map(assignRelatedFields)
+      .map ([target, relations]) ->
+        mapEachTargetRecord target, (record) ->
+          for relationTargetField, relationTarget of relationTargetsByField
+            relationTarget.assignRelationFields record, relations[relationTargetField]
+          record
 
   return {
     inRecordStream: relationLoader {
       extractTargetIds: (relationTarget, record) ->
         relationTarget.extractTargetIds record
 
-      assignRelatedFields: (record, relations) ->
-        record = record.clone()
-
-        for relationTargetField, relationTarget of relationTargetsByField
-          relationTarget.assignRelationFields record, relations[relationTargetField]
-
-        record
+      mapEachTargetRecord: (record, f) ->
+        # Protect records from side-effects by cloning before mutation
+        f record.clone()
     }
 
     inCollectionStream: relationLoader {
@@ -131,13 +131,10 @@ joinFields = (relationTargets) ->
             relationTarget.extractTargetIds record
         )
 
-      assignRelatedFields: (collection, relations) ->
+      mapEachTargetRecord: (collection, f) ->
         # Protect records from side-effects by cloning collection before mutation
         for record in collection.clone()
-          for relationTargetField, relationTarget of relationTargetsByField
-            relationTarget.assignRelationFields record, relations[relationTargetField]
-
-          record
+          f record
     }
   }
 
