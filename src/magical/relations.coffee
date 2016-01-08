@@ -91,8 +91,17 @@ joinFields = (relationTargets) ->
             result[relationTargetField] = indexBy 'id', batch.records
           result
 
-  relationLoader = ({ groupRelatedIdsByField, assignRelatedFields }) -> (changeStream) ->
-    idsByRelationFieldStream = changeStream.map(groupRelatedIdsByField)
+  relationLoader = ({ extractTargetIds, assignRelatedFields }) -> (changeStream) ->
+    idsByRelationFieldStream = changeStream.map (target) ->
+      targetsToIds = {}
+
+      # Take the cartesian product of records and relation targets
+      # Map relation targets to record ids by the relation target field
+      for relationTargetField, relationTarget of relationTargetsByField
+        targetsToIds[relationTargetField] = extractTargetIds relationTarget, record
+
+      targetsToIds
+
     relationIdentityMap = loadRelationTargetsInBatches idsByRelationFieldStream
 
     # Perform the inverse of groupRelatedIdsByField – map relation fields to
@@ -103,16 +112,8 @@ joinFields = (relationTargets) ->
 
   return {
     inRecordStream: relationLoader {
-      # (record) -> Map relationTargetField [ids]
-      groupRelatedIdsByField: (record) ->
-        targetsToIds = {}
-
-        # Take the cartesian product of records and relation targets
-        # Map relation targets to record ids by the relation target field
-        for relationTargetField, relationTarget of relationTargetsByField
-          targetsToIds[relationTargetField] = relationTarget.extractTargetIds record
-
-        targetsToIds
+      extractTargetIds: (relationTarget, record) ->
+        relationTarget.extractTargetIds record
 
       assignRelatedFields: (record, relations) ->
         record = record.clone()
@@ -124,19 +125,11 @@ joinFields = (relationTargets) ->
     }
 
     inCollectionStream: relationLoader {
-      # (collection) -> Map relationTargetField [ids]
-      groupRelatedIdsByField: (collection) ->
-        targetsToIds = {}
-
-        # Take the cartesian product of records and relation targets
-        # Map relation targets to record ids by the relation target field
-        for relationTargetField, relationTarget of relationTargetsByField
-          targetsToIds[relationTargetField] = flatten(
-            for record in collection
-              relationTarget.extractTargetIds record
-          )
-
-        targetsToIds
+      extractTargetIds: (relationTarget, collection) ->
+        flatten(
+          for record in collection
+            relationTarget.extractTargetIds record
+        )
 
       assignRelatedFields: (collection, relations) ->
         # Protect records from side-effects by cloning collection before mutation
