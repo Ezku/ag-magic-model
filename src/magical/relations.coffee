@@ -42,6 +42,11 @@ module.exports = relations = (createMagicModel, ModelClass, modelName, titles, d
         changes: joinFields(relationTargets).inCollectionStream(
           ModelClass.all(args...).changes
         )
+
+      one: (args...) ->
+        changes: joinFields(relationTargets).inRecordStream(
+          ModelClass.one(args...).changes
+        )
   }
 
 joinFields = (relationTargets) ->
