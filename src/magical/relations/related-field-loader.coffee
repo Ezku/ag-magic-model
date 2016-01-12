@@ -33,9 +33,7 @@ module.exports = relatedFieldLoader = (relationTarget) ->
     unrecoverableError = recordChanges
       .errors()
       .mapError((e) -> e)
-      # FIXME: Does not actually check for unrecoverability.
-      # KLUDGE: Proxy responds with 200 OK, not 404 after record deletion
-      # .filter((e) -> e.unrecoverable)
+      .filter((e) -> e.unrecoverable)
 
     return {
       changes: recordChanges
