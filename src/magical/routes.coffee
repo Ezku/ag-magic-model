@@ -9,5 +9,9 @@ module.exports = routeAccessors = (modelName, routes) ->
     route = routes["data.#{modelName}.new"]?.uid ? ROUTE_TO_RECORD_DETAILS
     addRecordTypeParam route, modelName
 
+  'show': do ->
+    route = routes["data.#{modelName}.show"]?.uid ? ROUTE_TO_RECORD_DETAILS
+    addRecordTypeParam route, modelName
+
 addRecordTypeParam = (route, modelName) ->
   "#{route}?record-type=#{modelName}"

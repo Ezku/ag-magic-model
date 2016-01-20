@@ -45,6 +45,7 @@ Access the formatted label of a field.
 Access route strings usable as `supersonic.module` navigation functionality parameters, eg. `supersonic.module.modal.show`.
 
 - `Model.magical.routes.new`: route for creating a new record of this type
+- `Model.magical.routes.show`: route for showing an existing record of this type; requires `record-id`
 
 
 ### `Model.magical.titles`
